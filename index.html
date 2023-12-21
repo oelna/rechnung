@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Rechnung</title>
+
+	<link rel="stylesheet" href="https://oelna.github.io/rechnung/rechnung.css" />
+
+	<script type="module" src="https://oelna.github.io/rechnung/rechnung.js" defer></script>
+</head>
+<body>
+
+	<!-- icons -->
+	<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+		<symbol id="drag-handle" viewBox="0 0 30 55">
+			<circle cx="5" cy="5" r="4" fill="currentColor" />
+			<circle cx="25" cy="5" r="4" fill="currentColor" />
+			<circle cx="5" cy="25" r="4" fill="currentColor" />
+			<circle cx="25" cy="25" r="4" fill="currentColor" />
+			<circle cx="5" cy="45" r="4" fill="currentColor" />
+			<circle cx="25" cy="45" r="4" fill="currentColor" />
+		</symbol>
+	</svg>
+	
+	<div id="overlay">
+		<section>
+			<button id="add-row">Add Row</button>
+			<button id="remove-row">Remove Row</button>
+		</section>
+		<section>
+			<textarea id="private-key" cols="32" rows="14" placeholder="Private ECDSA Key"></textarea>
+			<button id="add-signature">Sign</button>
+		</section>
+		<section>
+			<label>Show Girocode<input type="checkbox" id="show-girocode" checked /></label>
+			<label>Show Signature<input type="checkbox" id="show-ecdsa" checked /></label>
+		</section>
+		<section>
+			<button id="download-file" data-editable="true">Download (Editable)</button>
+			<button id="export-file" data-editable="false">Export (Readonly)</button>
+		</section>
+	</div>
+
+	<div class="page" id="page-1">
+		<section class="address" contenteditable>
+			<div class="sender">Arno Richter / Musterstr. 21 / 68199 Mannheim</div>
+			<div class="recipient">
+				Empfängerin GmbH<br />
+				z.Hd. Martina Musterfrau<br />
+				Musterstr. 99<br />
+				67000 Musterstadt<br />
+			</div>
+		</section>
+		<section class="header" contenteditable>
+			<dl>
+				<dt></dt>
+				<dd><strong>Studio Richter</strong></dd>
+
+				<dt class="space"></dt>
+				<dd class="space owner">Arno Richter</dd>
+
+				<dt></dt>
+				<dd>Musterstr. 21<br />68199 Mannheim<br />Deutschland</dd>
+
+				<dt class="space">Email:</dt>
+				<dd class="space">hans@dampf.de</dd>
+
+				<dt>URL:</dt>
+				<dd>https://richter.studio</dd>
+
+				<dt class="space">Bank:</dt>
+				<dd class="space">Deutsche Bank</dd>
+
+				<dt>IBAN:</dt>
+				<dd class="iban">DE30 5001 0517 5619 3514 69</dd>
+
+				<dt class="space">Steuer-Nr:</dt>
+				<dd class="space">30111/32222</dd>
+
+				<dt>RE-Nr:</dt>
+				<dd class="receipt-id">2023120001</dd>
+
+				<dt>RE-Datum:</dt>
+				<dd>15.12.2023</dd>
+
+				<dt>Eingang:</dt>
+				<dd></dd>
+			</dl>
+		</section>
+		<section class="content" contenteditable>
+			<h1>Rechnung</h1>
+
+			<p>Sehr geehrte Frau Musterfrau</p>
+
+			<p>für die von September bis Dezember 2022 angefallenen Arbeiten erlaube ich mir folgende Positionen zu berechnen:</p>
+
+			<table>
+				<tr class="no-drag">
+					<th class="work">Stundensatz</th>
+					<th class="duration"></th>
+					<th class="factor"></th>
+					<th class="sum rate">90.00</th>
+					<th class="handle disabled"></th>
+				</tr>
+				<tr>
+					<td>Position</td>
+					<td>1h 30m</td>
+					<td></td>
+					<td class="sum">90.00</td>
+					<td class="handle"><svg><use href="#drag-handle"/></svg></td>
+				</tr>
+				<tr class="section no-drag">
+					<td>Zwischensumme</td>
+					<td></td>
+					<td></td>
+					<td class="sum net">0.00</td>
+					<td class="handle disabled"></td>
+				</tr>
+				<tr class="no-drag">
+					<td class="tax-text">Mwst 19%</td>
+					<td></td>
+					<td></td>
+					<td class="sum tax" data-percent="19.0">0.00</td>
+					<td class="handle disabled"></td>
+				</tr>
+				<tr class="total no-drag">
+					<td>Gesamt</td>
+					<td></td>
+					<td></td>
+					<td class="sum grandtotal">0.00</td>
+					<td class="handle disabled"></td>
+				</tr>
+			</table>
+
+			<p>Der Betrag ist zahlbar auf mein Konto innerhalb von 14 Tagen ab Rechnungsdatum. Haben Sie vielen Dank im Voraus.</p>
+
+			<p>Mit freundlichem Gruß, Arno Richter</p>
+		</section>
+		<section class="footer" contenteditable>
+			<dl>
+				<dt class="giro">Girocode</dt>
+				<dd class="giro"><div id="girocode" class="code"></div></dd>
+
+				<dt class="sig">Signatur</dt>
+				<dd class="sig"><div id="signaturecode" class="code"></div></dd>
+
+				<dt class="sig">Signatur</dt>
+				<dd class="sig signature"></dd>
+
+				<dt class="sig">Public Key</dt>
+				<dd class="sig public-key"></dd>
+
+				<dt class="sig">Input</dt>
+				<dd class="sig signed-string"></dd>
+			</dl>
+		</section>
+	</div>
+	<div class="page" id="page-2"></div>
+</body>
+</html>

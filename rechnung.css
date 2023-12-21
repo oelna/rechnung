@@ -1,0 +1,224 @@
+* {
+	padding: 0;
+	margin: 0;
+	border: 0;
+	font-size: 100%;
+	box-sizing: border-box;
+}
+
+@page {
+	margin: 0;
+}
+
+html {
+	font: 10pt/1.35 Consolas, monospace;
+	background: #ccc;
+}
+
+#overlay {
+	display: none;
+}
+
+.page {
+	position: relative;
+	width: 210mm;
+	height: 297mm;
+	background: #fff;
+}
+
+.page > section {
+	outline: 1px solid #f0f;
+	position: absolute;
+}
+
+.page .address {
+	top: 50mm;
+	left: 25mm;
+	width: 85mm;
+	height: 30mm;
+}
+
+.page .address .sender {
+	font-size: 7pt;
+	margin-block-end: 1rem;
+}
+
+.page .header {
+	top: 20mm;
+	left: 112.5mm;
+	width: 85mm;
+	/* height: 80mm; */
+
+	display: grid;
+	grid-template-columns: 29mm 1fr;
+	grid-gap: 0 3.5mm;
+	align-items: start;
+}
+
+.page .header dl {
+	display: contents;
+}
+
+.page .header dt {
+	text-align: right;
+}
+
+.page .header .space {
+	padding-top: 0.5em;
+}
+
+.page .header :is(dt, dd) {
+	outline: 0px solid #0ff;
+	min-height: 1ch;
+}
+
+.page .content {
+	top: 95mm;
+	left: 25mm;
+	width: 140mm;
+	
+}
+
+.page .content h1 {
+	font-weight: bold;
+	margin-block-end: 1rem;
+}
+
+.page .content p {
+	margin-block-end: 1rem;
+}
+
+.page .content table {
+	border-collapse: collapse;
+	width: 100%;
+	margin-block: 2rem;
+}
+
+.page .content table :is(th, td) {
+	text-align: left;
+	outline: 0px solid #f0f;
+	padding: 0.3em 0.3em 0.3em 0;
+}
+
+.page .content table .work { width: calc(60% - 1rem); }
+.page .content table .duration { width: 15%; text-align: right; }
+.page .content table .factor { width: 10%; }
+.page .content table .sum { width: 15%; text-align: right; }
+
+.page .content table th {
+	border-block-end: 1px solid #000;
+}
+
+.page .content table tr.section td {
+	border-block-start: 1px solid #000;
+}
+
+.page .content table tr.total td {
+	border-block-start: 0.15rem solid #000;
+	font-weight: bold;
+}
+
+.page .content table .sum::before {
+	content: '€';
+	margin-inline-end: 2pt;
+}
+
+.page .content table .handle {
+	cursor: grab;
+	user-select: none;
+}
+
+.page .footer {
+	bottom: 15mm;
+	left: 112.5mm;
+	width: 85mm;
+
+	display: grid;
+	grid-template-columns: 29mm 1fr;
+	grid-gap: 1.5mm 3.5mm;
+	align-items: start;
+}
+
+.page .footer dl {
+	display: contents;
+}
+
+.page .footer dt {
+	text-align: right;
+}
+
+.page .footer dd {
+	font-size: 6pt;
+	word-break: break-word;
+}
+
+.page .footer .code {
+	width: 15mm;
+	height: 15mm;
+	outline: 1px solid red;
+}
+
+.hidden {
+	display: none;
+}
+
+@media only screen {
+	#overlay {
+		display: block;
+		position: fixed;
+		z-index: 100;
+		right: 10mm;
+		top: 10mm;
+		width: 50ch;
+		min-height: 10rem;
+		background: rgba(0,0,0,0.3);
+		padding: 1rem;
+	}
+
+	#overlay section {
+		margin-block-end: 1rem;
+		border-block-end: 1px solid #777;
+		padding-block-end: 1rem;
+	}
+
+	#overlay button {
+		background: #0009;
+		color: white;
+		padding: 0.2em 0.6em;
+		cursor: pointer;
+	}
+
+	.page {
+		margin-inline: auto;
+		margin-block: 2rem;
+		box-shadow: 0 1rem 1rem #0003;
+		outline: 0px solid #999;
+	}
+
+	tr:not(.no-drag) :is(th, td).handle {
+		background: transparent;
+		width: 1rem;
+		padding: 0;
+		color: gray;
+	}
+
+	.handle svg {
+		display: block;
+		margin-inline: auto;
+		outline: 0px solid #0f0;
+		width: 100%;
+		height: 2ch;
+	}
+
+	tr.sortable-placeholder {
+		background: #ddd;
+	}
+}
+
+@media only print {
+	* {
+		outline: 0 !important;
+	}
+
+	:is(th, td).handle { display: none; }
+}
