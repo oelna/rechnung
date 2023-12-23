@@ -1,4 +1,4 @@
-// import { QRCode } from './qr.esm.js';
+
 import { QRCode } from 'https://oelna.github.io/qrcodejs/qrcode.esm.js';
 import sortable from 'https://oelna.github.io/rechnung/html5sortable.es.js';
 
@@ -307,7 +307,7 @@ document.querySelector('#add-signature').addEventListener('click', async functio
 	console.log(signStrEle.textContent.trim(), signature);
 
 	const publicKey = await getPublicKey(pk);
-	const pem = await exportKey(publicKey);
+	const pem = await exportPublicKey(publicKey);
 
 	signatureEle.textContent = signature;
 	publicKeyEle.textContent = stripPEM(pem);
@@ -342,8 +342,17 @@ function ab2str (arrayBuffer) {
 	return String.fromCharCode.apply(null, new Uint8Array(arrayBuffer));
 }
 
-async function exportKey (key) {
-	const exported = await window.crypto.subtle.exportKey("spki", key);
+async function exportPublicKey (key) {
+	const exported = await window.crypto.subtle.exportKey('spki', key);
+	const exportedAsString = ab2str(exported);
+	const exportedAsBase64 = window.btoa(exportedAsString);
+	const pemExported = `-----BEGIN PUBLIC KEY-----\n${exportedAsBase64}\n-----END PUBLIC KEY-----`;
+
+	return pemExported;
+}
+
+async function exportPrivateKey (key) {
+	const exported = await window.crypto.subtle.exportKey('pkcs8', key);
 	const exportedAsString = ab2str(exported);
 	const exportedAsBase64 = window.btoa(exportedAsString);
 	const pemExported = `-----BEGIN PRIVATE KEY-----\n${exportedAsBase64}\n-----END PRIVATE KEY-----`;
@@ -424,104 +433,6 @@ function exportMarkup (event) {
 document.querySelector('#download-file').addEventListener('click', exportMarkup);
 document.querySelector('#export-file').addEventListener('click', exportMarkup);
 
-// table dragging
-/*
-
-let drag = false;
-let sy;
-
-document.querySelector('.page table').addEventListener('mousedown', function (event) {
-
-	return;
-
-	if (event.target.classList.contains('handle')) {
-		if (event.target.classList.contains('disabled')) return;
-		
-		const table = event.target.closest('table');
-		const tr = event.target.closest('tr');
-		sy = event.pageY, drag;
-
-		const index = [...table.querySelectorAll('tr')].indexOf(tr);
-		console.log('index', index);
-
-		tr.classList.add('dragging');
-		console.log('table', this, event.target);
-
-		document.addEventListener('mousemove', dragMove);
-	}
-});
-*/
-
-function dragMove (e) {
-	if (!drag && Math.abs(e.pageY - sy) < 10) return;
-	drag = true;
-	
-	const dragItem = document.querySelector('tr.dragging');
-	const table = dragItem.closest('table');
-	const tr = [...table.querySelectorAll('tr')];
-	const index = tr.indexOf(dragItem);
-
-	if (index < 0) return; // only if index is found?
-
-	const siblings = tr.splice(index, 1); // remove one item at 'index'
-
-	// console.log('dragging', index, tr.length, siblings);
-
-	for (let i = 0; i < siblings.length; i++) {
-		let s = siblings[i];
-		// let y = s.offsetTop;
-		let y = s.getBoundingClientRect().top + window.scrollY;
-
-		let height = outerHeight(s);
-		console.log(e.pageY >= y, e.pageY < y+height, e.pageY, y, y+height);
-		
-		if (e.pageY >= y && e.pageY < y + height) {
-			if (i < index) {
-				s.after(dragItem);
-			} else {
-				s.before(dragItem);
-			}
-			return false;
-		} else {
-			console.log('do nothing');
-		}
-	}
-
-	/*
-	return;
-	tr.siblings().each(function() {
-		var s = $(this), i = s.index(), y = s.offset().top;
-		if (e.pageY >= y && e.pageY < y + s.outerHeight()) {
-			if (i < tr.index()) s.insertAfter(tr);
-			else s.insertBefore(tr);
-			return false;
-		}
-	});
-	*/
-}
-
-/*
-function outerHeight (element) {
-	const height = element.offsetHeight;
-	const style = window.getComputedStyle(element);
-
-	return ['top', 'bottom']
-		.map(side => parseInt(style[`margin-${side}`]))
-		.reduce((total, side) => total + side, height);
-}
-
-document.addEventListener('mouseup', dragUp);
-
-function dragUp (e) {
-	if (!drag) return;
-
-	drag = false;
-	document.querySelector('tr.dragging').classList.remove('dragging');
-	document.removeEventListener('mousemove', dragMove);
-	return;
-}
-*/
-
 if (sortable) {
 	sortable('.page tbody', {
 		items: 'tr:not(.no-drag)',
@@ -530,6 +441,59 @@ if (sortable) {
 		// placeholder: '<tr><td colspan="7">&nbsp;</td></tr>'
 	});
 }
+
+// generate new ECDSA key
+document.querySelector('#new-key')?.addEventListener('click', async function (event) {
+	event.preventDefault();
+
+	const newKey = await crypto.subtle.generateKey({
+			"name": "ECDSA",
+			"namedCurve": "P-521"
+		},
+		true,
+		["sign", "verify"]
+	);
+
+	const exported = await exportPrivateKey(newKey.privateKey);
+
+	if (await confirmDialog('Replace the current private key with the newly generated ECDSA key?')) {
+		const ta = document.querySelector('#private-key');
+
+		if (ta) {
+			ta.value = exported.trim() + "\n";
+
+			localStorage.setItem('rechnungPK', ta.value);
+			recalculate();
+		}
+	}
+});
+
+function confirmDialog (msg) {
+	return new Promise(function (resolve, reject) {
+		let confirmed = window.confirm(msg);
+
+		return confirmed ? resolve(true) : reject(false);
+	});
+}
+
+// download the current private key
+document.querySelector('#download-key')?.addEventListener('click', function (event) {
+	event.preventDefault();
+
+	const ta = document.querySelector('#private-key');
+
+	if (ta) {
+		const key = stripPEM(ta.value);
+
+		const b64key = key.replace(/(.{64})/g, "$1\n");
+		const pem = "-----BEGIN PRIVATE KEY-----\n"+b64key+"\n-----END PRIVATE KEY-----\n";
+
+		const link = document.createElement('a');
+		link.setAttribute('download', 'id_ecdsa_'+Date.now());
+		link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(pem));
+		link.click();
+	}
+});
 
 // restore some settings
 if (localStorage.getItem('rechnungPK') !== null) {
