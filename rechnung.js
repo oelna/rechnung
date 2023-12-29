@@ -1,13 +1,20 @@
 
 import { QRCode } from 'https://oelna.github.io/qrcodejs/qrcode.esm.js';
 import sortable from 'https://oelna.github.io/rechnung/html5sortable.es.js';
+import { Draggable, Sortable, Droppable } from 'https://cdn.jsdelivr.net/npm/@shopify/draggable/build/esm/index.mjs';
+// import interact from 'https://cdn.interactjs.io/v1.10.26/interactjs/index.js';
 
 let currentPage = 1;
 let defaultFactor = 1;
+let activeFrame;
+let activePage = 1;
 
 // updating
 let updateDelay = 1200;
 let timeout;
+
+const sizeMM = 3.779527559; // 1mm in px
+const sizePX = 0.26458333333719; // 1px in mm
 
 // barcode settings
 const barcodeSettings = {
@@ -274,6 +281,12 @@ document.querySelector('#show-girocode').addEventListener('change', function (ev
 	});
 });
 
+document.querySelector('#show-grid').addEventListener('change', function (event) {
+	event.preventDefault();
+
+	document.querySelector('.grids .document-grid').classList.toggle('hidden');
+});
+
 document.querySelector('#add-signature').addEventListener('click', async function (event) {
 	event.preventDefault();
 
@@ -433,6 +446,7 @@ function exportMarkup (event) {
 document.querySelector('#download-file').addEventListener('click', exportMarkup);
 document.querySelector('#export-file').addEventListener('click', exportMarkup);
 
+// sortable table rows
 if (sortable) {
 	sortable('.page tbody', {
 		items: 'tr:not(.no-drag)',
@@ -441,6 +455,123 @@ if (sortable) {
 		// placeholder: '<tr><td colspan="7">&nbsp;</td></tr>'
 	});
 }
+
+// focusable sections
+document.addEventListener('click', function (event) {
+	const frame = event.target.closest('section.frame');
+	const page = event.target.closest('.page');
+	
+	if (page) {
+		activePage = page;
+	}
+
+	if (frame) {
+		activePage.querySelectorAll('section.frame[aria-current]').forEach(function (ele, i) {
+			ele.removeAttribute('aria-current');
+		});
+
+		activeFrame = frame;
+		frame.setAttribute('aria-current', '');
+
+		displaySectionInfo(frame);
+	} else {
+		// deselect all
+		document.querySelectorAll('section.frame[aria-current]').forEach(function (ele, i) {
+			ele.removeAttribute('aria-current');
+		});
+	}
+	// console.log(activeFrame, activePage);
+});
+
+function displaySectionInfo (section) {
+	if (!section) return;
+	// console.log('showing info on', section);
+}
+
+function drawGrid () {
+	const ele = document.querySelector('.grids .document-grid');
+	if (!ele) return;
+
+	const color = '#ddd';
+	const weight = 1; // px
+	const size = 5; // mm
+
+	const mode = 'grid'; // or lines
+
+	let svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'mm" height="'+size+'mm">';
+	if (mode == 'grid') svg += '<line x1="0" y1="0" x2="0" y2="100%" stroke="'+color+'" stroke-width="'+weight+'px" />';
+	svg += '<line x1="0" y1="0" x2="100%" y2="0" stroke="'+color+'" stroke-width="'+weight+'px" />';
+	svg += '</svg>';
+
+	const css = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+	// ele.style.backgroundImage = 'url(' + css + ')';
+
+	document.querySelector(':root').style.setProperty('--document-grid', 'url(' + css + ')');
+
+	ele.style.setProperty('--document-grid-color', color);
+	ele.style.setProperty('--document-grid-size', (size + 'mm'));
+	ele.style.setProperty('--document-grid-weight', (weight + 'px'));
+}
+
+drawGrid();
+
+let initialMousePosition;
+let currentMousePosition;
+let mouseOffset;
+
+const draggable = new Draggable(document.querySelectorAll('.page .frames'), {
+	draggable: 'section',
+	delay: 300 // required so click events go through https://github.com/Shopify/draggable/issues/68
+});
+
+draggable.on('mirror:created', function (event) {
+	// const containerRect = event.sourceContainer.getBoundingClientRect();
+	const dragRect = event.source.getBoundingClientRect();
+
+	mouseOffset = {
+		x: (initialMousePosition.x - dragRect.x),
+		y: (initialMousePosition.y - dragRect.y)
+	};
+});
+
+draggable.on('drag:start', function (event) {
+	// event.source.classList.add('dragging');
+
+	initialMousePosition = {
+		x: event.sensorEvent.clientX,
+		y: event.sensorEvent.clientY,
+	};
+});
+
+draggable.on('drag:move', function (event) {
+	currentMousePosition = {
+		x: event.sensorEvent.clientX,
+		y: event.sensorEvent.clientY,
+	};
+});
+
+draggable.on('drag:stop', function (event) {
+	const item = event.originalSource;
+	const page = event.sourceContainer.parentNode; // respect the .frames container
+	const snapToGrid = true;
+
+	item.style.position = 'absolute';
+
+	let posX = (currentMousePosition.x - mouseOffset.x - page.offsetLeft + window.scrollX);
+	let posY = (currentMousePosition.y - mouseOffset.y - page.offsetTop + window.scrollY);
+
+	if (snapToGrid) {
+		posX = roundTo(posX, 5*sizeMM);
+		posY = roundTo(posY, 5*sizeMM);
+	}
+
+	item.style.top = 'calc(' +posY + 'px + 0px)'; // seems the conversion makes a slight offset
+	item.style.left = 'calc(' +posX + 'px + 0px)';
+});
+
+function roundTo (input, roundTo) {
+	return Math.round(input / roundTo) * roundTo;
+};
 
 // generate new ECDSA key
 document.querySelector('#new-key')?.addEventListener('click', async function (event) {
